@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Numerología - Rincón Zen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              'sans': ['Lato', 'system-ui', 'sans-serif'],
+              'serif': ['Playfair Display', 'serif'], // Para títulos si quieres
+            },
+            colors: {
+              // Paleta Azul inspirada en Calm.es
+              'calm-primary': {
+                  light: '#B0E0E6', // PowderBlue
+                  DEFAULT: '#6495ED', // CornflowerBlue
+                  dark: '#4682B4',  // SteelBlue
+              },
+              'calm-secondary': '#8FBC8F', // DarkSeaGreen
+              'calm-bg': '#F7F9FC',     // Fondo muy claro
+              'calm-text': '#333333',   // Texto principal
+              'calm-text-soft': '#555555', // Texto secundario
+              'calm-white': '#FFFFFF',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+        /* Estilos adicionales */
+        .result-section {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background-color: #FFFFFF; /* calm-white */
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #B0E0E6; /* calm-primary-light */
+        }
+        .result-title {
+            font-family: 'Playfair Display', serif; /* Opcional: fuente serif para títulos */
+            font-size: 1.25rem; /* text-xl */
+            font-weight: bold;
+            color: #4682B4; /* calm-primary-dark */
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid #B0E0E6;
+            padding-bottom: 0.5rem;
+        }
+         .interpretation-text {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #555555; /* calm-text-soft */
+        }
+        .letter-breakdown span {
+            display: inline-block;
+            min-width: 25px;
+            margin: 2px;
+            padding: 2px 4px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background-color: #f0f0f0;
+            font-family: monospace;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-calm-bg font-sans text-calm-text antialiased p-5 md:p-10">
+
+    <div class="container mx-auto max-w-2xl bg-calm-white p-6 md:p-10 rounded-lg shadow-xl">
+
+        <h1 class="text-3xl md:text-4xl font-bold text-center text-calm-primary-dark mb-8 font-serif">Calculadora Numerológica</h1>
+        <p class="text-center text-calm-text-soft mb-8">Descubrí la vibración de tus números personales a través de tu nombre y fecha de nacimiento.</p>
+
+        <div class="space-y-6 mb-8">
+            <div>
+                <label for="fullName" class="block text-sm font-medium text-calm-text-soft mb-1">Nombre Completo (hasta 7 palabras):</label>
+                <input type="text" id="fullName" name="fullName" required placeholder="Ej: María Elena González Pérez" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-calm-primary focus:border-calm-primary">
+                <p class="text-xs text-gray-500 mt-1">Ingresá nombres y apellidos tal como figuran en tu documento o partida.</p>
+            </div>
+            <div>
+                <label for="birthDate" class="block text-sm font-medium text-calm-text-soft mb-1">Fecha de Nacimiento:</label>
+                <input type="date" id="birthDate" name="birthDate" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-calm-primary focus:border-calm-primary">
+            </div>
+        </div>
+
+        <div class="text-center mb-10">
+            <button id="calculateButton" class="bg-calm-primary hover:bg-calm-primary-dark text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300 shadow-md">
+                Calcular Mis Números
+            </button>
+        </div>
+
+        <div id="resultsArea" class="space-y-6">
+            </div>
+
+    </div>
+
+    <script>
+        // --- Constantes y Mapeos ---
+        const letterValues = {
+            'A': 1, 'J': 1, 'S': 1, 'Á': 1, // Acentos para vocales
+            'B': 2, 'K': 2, 'T': 2,
+            'C': 3, 'L': 3, 'U': 3, 'Ú': 3,
+            'D': 4, 'M': 4, 'V': 4,
+            'E': 5, 'N': 5, 'W': 5, 'É': 5, 'Ñ': 5, // Incluye Ñ como N
+            'F': 6, 'O': 6, 'X': 6, 'Ó': 6,
+            'G': 7, 'P': 7, 'Y': 7, // Y como consonante/vocal según uso común, aquí simplificado
+            'H': 8, 'Q': 8, 'Z': 8,
+            'I': 9, 'R': 9, 'Í': 9
+            // Nota: La Y a veces se trata diferente, aquí se le asigna 7.
+        };
+
+        const vowels = "AEIOUÁÉÍÓÚ"; // Vocales (incluyendo acentuadas)
+
+        // --- Interpretaciones Concisas (¡Expandir a gusto!) ---
+        // (Usando voseo)
+        const interpretations = {
+            lifePath: {
+                1: "Sos un líder nato, independiente y pionero. Tu camino es iniciar y dirigir. Confiá en tu fuerza.",
+                2: "Sos diplomático, cooperador y sensible. Buscás la armonía y trabajás bien en equipo. Tu fuerza está en la unión.",
+                3: "Sos creativo, comunicativo y optimista. Tu camino es expresarte y traer alegría. Disfrutá de la vida.",
+                4: "Sos práctico, organizado y trabajador. Construís sobre bases sólidas y buscás estabilidad. Tu fortaleza es la constancia.",
+                5: "Sos aventurero, versátil y amante de la libertad. Buscás experiencias y te adaptás al cambio. Tu camino es la exploración.",
+                6: "Sos responsable, protector y buscador de armonía familiar/comunitaria. Cuidás de los demás. Tu don es el amor y el servicio.",
+                7: "Sos introspectivo, analítico y buscador de la verdad. Necesitás tu espacio para reflexionar y aprender. Tu camino es la sabiduría.",
+                8: "Sos ambicioso, tenés poder de manifestación y buena capacidad ejecutiva. Buscás el éxito material y el poder bien usado. Sos un realizador.",
+                9: "Sos compasivo, humanitario y con una visión amplia. Buscás el bien mayor y tenés una gran sensibilidad. Tu camino es el servicio desinteresado.",
+                11: "Número Maestro: Tenés una gran intuición y potencial espiritual elevado. Sos inspirador y podés guiar a otros. El desafío es mantener los pies en la tierra.",
+                22: "Número Maestro: Sos el 'Maestro Constructor'. Tenés la capacidad de convertir grandes sueños en realidad práctica. Gran potencial para el bien común.",
+                33: "Número Maestro: Sos el 'Maestro del Servicio Amoroso'. Gran compasión y capacidad de sanación y enseñanza. Tu camino es el servicio elevado a la humanidad."
+            },
+            expression: { // Cómo te expresás y tus talentos
+                1: "Te expresás con liderazgo y originalidad. Tus talentos están en iniciar y dirigir.",
+                2: "Te expresás con diplomacia y tacto. Tus talentos residen en la cooperación y la mediación.",
+                3: "Te expresás con creatividad y alegría. Tus talentos son la comunicación y la expresión artística.",
+                4: "Te expresás con orden y practicidad. Tus talentos son la organización y la construcción.",
+                5: "Te expresás con versatilidad y entusiasmo. Tus talentos son la comunicación y la adaptación.",
+                6: "Te expresás con responsabilidad y calidez. Tus talentos son el cuidado y la armonización.",
+                7: "Te expresás con análisis y profundidad. Tus talentos son la investigación y la introspección.",
+                8: "Te expresás con autoridad y eficiencia. Tus talentos son la gestión y la concreción.",
+                9: "Te expresás con compasión y sabiduría. Tus talentos son la enseñanza y el servicio humanitario.",
+                11: "Número Maestro: Te expresás con gran intuición e inspiración. Podés ser un canal para ideas elevadas.",
+                22: "Número Maestro: Te expresás construyendo cosas de valor práctico y duradero para muchos.",
+                33: "Número Maestro: Te expresás a través del servicio compasivo, la sanación y la enseñanza amorosa."
+            },
+            soulUrge: { // Lo que tu alma anhela
+                1: "Tu alma anhela independencia, liderazgo y ser pionero/a.",
+                2: "Tu alma anhela armonía, conexión profunda en pareja o asociaciones.",
+                3: "Tu alma anhela expresarse creativamente, comunicar y sentir alegría.",
+                4: "Tu alma anhela estabilidad, seguridad, orden y construir algo sólido.",
+                5: "Tu alma anhela libertad, aventura, variedad y experimentar la vida.",
+                6: "Tu alma anhela un hogar armonioso, responsabilidad afectiva y servir a tu comunidad.",
+                7: "Tu alma anhela conocimiento profundo, introspección, verdad y conexión espiritual.",
+                8: "Tu alma anhela lograr maestría en el mundo material, éxito y poder bien utilizado.",
+                9: "Tu alma anhela contribuir al bienestar de la humanidad, compasión y sabiduría universal.",
+                11: "Número Maestro: Tu alma anhela inspiración espiritual, iluminación y guiar a otros intuitivamente.",
+                22: "Número Maestro: Tu alma anhela construir algo grande y significativo que beneficie a muchos.",
+                33: "Número Maestro: Tu alma anhela expresar el amor incondicional a través del servicio y la sanación."
+            },
+            personality: { // Cómo te ven los demás, tu máscara social
+                1: "Proyectás una imagen de líder, independiente y seguro/a.",
+                2: "Proyectás una imagen amable, diplomática y cooperadora.",
+                3: "Proyectás una imagen sociable, optimista y comunicativa.",
+                4: "Proyectás una imagen seria, confiable y trabajadora.",
+                5: "Proyectás una imagen carismática, inquieta y adaptable.",
+                6: "Proyectás una imagen responsable, protectora y cálida.",
+                7: "Proyectás una imagen reservada, analítica y quizás misteriosa.",
+                8: "Proyectás una imagen de autoridad, competente y exitosa.",
+                9: "Proyectás una imagen sabia, compasiva y altruista.",
+                11: "Número Maestro: Proyectás una imagen carismática, intuitiva y un poco eléctrica.",
+                22: "Número Maestro: Proyectás una imagen de gran capacidad, poder y pragmatismo.",
+                33: "Número Maestro: Proyectás una imagen amorosa, inspiradora y protectora."
+            }
+        };
+
+        // --- Elementos del DOM ---
+        const fullNameInput = document.getElementById('fullName');
+        const birthDateInput = document.getElementById('birthDate');
+        const calculateButton = document.getElementById('calculateButton');
+        const resultsArea = document.getElementById('resultsArea');
+
+        // --- Funciones de Cálculo ---
+
+        /** Reduce un número a un dígito o número maestro (11, 22, 33) */
+        function reduceNumber(num) {
+            // Convierte a string para sumar dígitos si es necesario
+            let strNum = String(num);
+            // Mientras el número tenga más de un dígito Y no sea un número maestro
+            while (strNum.length > 1 && strNum !== '11' && strNum !== '22' && strNum !== '33') {
+                let sum = 0;
+                for (let digit of strNum) {
+                    sum += parseInt(digit);
+                }
+                strNum = String(sum); // Convierte la suma de nuevo a string para el siguiente ciclo
+            }
+            return parseInt(strNum); // Devuelve el número final (puede ser 1-9, 11, 22, 33)
+        }
+
+         /** Obtiene el valor numérico de una letra (ignora no alfabéticos) */
+         function getLetterValue(letter) {
+            const upperLetter = letter.toUpperCase();
+            // Manejo básico de acentos (sobrescribe mapeo si es necesario)
+            const normalizedLetter = upperLetter
+                .replace(/[ÁÀÄÂ]/g, 'A')
+                .replace(/[ÉÈËÊ]/g, 'E')
+                .replace(/[ÍÌÏÎ]/g, 'I')
+                .replace(/[ÓÒÖÔ]/g, 'O')
+                .replace(/[ÚÙÜÛ]/g, 'U');
+
+            return letterValues[normalizedLetter] || 0; // Devuelve 0 si no es una letra mapeada
+        }
+
+        /** Calcula el Número de Expresión */
+        function calculateExpression(name) {
+            let sum = 0;
+            let breakdown = ''; // Para mostrar cálculo letra por letra
+            for (let i = 0; i < name.length; i++) {
+                const letter = name[i];
+                const value = getLetterValue(letter);
+                if (value > 0) { // Solo suma si es una letra válida
+                    sum += value;
+                    breakdown += `<span>${letter.toUpperCase()}=${value}</span> `;
+                } else if (letter === ' ') {
+                    breakdown += '<br>'; // Salto de línea para espacios entre nombres
+                }
+            }
+            const reducedSum = reduceNumber(sum);
+            return { value: reducedSum, calculation: sum, breakdown: breakdown.trim() };
+        }
+
+        /** Calcula el Número del Impulso del Alma (Vocales) */
+        function calculateSoulUrge(name) {
+            let sum = 0;
+            for (let letter of name) {
+                const upperLetter = letter.toUpperCase();
+                if (vowels.includes(upperLetter)) {
+                    sum += getLetterValue(upperLetter); // Usa getLetterValue para manejar acentos
+                }
+            }
+            return reduceNumber(sum);
+        }
+
+        /** Calcula el Número de Personalidad (Consonantes) */
+        function calculatePersonality(name) {
+            let sum = 0;
+            for (let letter of name) {
+                const upperLetter = letter.toUpperCase();
+                // Es consonante si es una letra mapeada Y NO es una vocal
+                if (letterValues[upperLetter] && !vowels.includes(upperLetter)) {
+                     // Caso especial Y: Aquí lo tratamos siempre como consonante (simplificación)
+                     sum += getLetterValue(upperLetter);
+                }
+                 // Considerar la Ñ como consonante (ya incluida en letterValues)
+                 else if (upperLetter === 'Ñ') {
+                      sum += getLetterValue(upperLetter);
+                 }
+            }
+            return reduceNumber(sum);
+        }
+
+        /** Calcula el Número de Sendero de Vida */
+        function calculateLifePath(dateString) {
+            if (!dateString) return { value: 0, calculation: 'Fecha inválida' }; // Check si la fecha es válida
+
+            try {
+                const dateParts = dateString.split('-'); // Formato YYYY-MM-DD
+                if (dateParts.length !== 3) throw new Error("Formato de fecha incorrecto");
+
+                const year = parseInt(dateParts[0]);
+                const month = parseInt(dateParts[1]);
+                const day = parseInt(dateParts[2]);
+
+                if (isNaN(year) || isNaN(month) || isNaN(day)) throw new Error("Componentes de fecha inválidos");
+
+                const reducedMonth = reduceNumber(month);
+                const reducedDay = reduceNumber(day);
+                const reducedYear = reduceNumber(year);
+
+                const finalSum = reducedMonth + reducedDay + reducedYear;
+                const reducedFinalSum = reduceNumber(finalSum);
+
+                const calculation = `${month} + ${day} + ${year} -> ${reducedMonth} + ${reducedDay} + ${reducedYear} = ${finalSum} -> ${reducedFinalSum}`;
+
+                return { value: reducedFinalSum, calculation: calculation };
+            } catch (error) {
+                console.error("Error calculando Sendero de Vida:", error);
+                return { value: 0, calculation: 'Error en fecha' };
+            }
+        }
+
+        // --- Función Principal de Cálculo y Display ---
+        function calculateAndDisplay() {
+            const name = fullNameInput.value.trim();
+            const birthDate = birthDateInput.value;
+
+            // Validaciones básicas
+            if (!name) {
+                resultsArea.innerHTML = '<p class="text-red-600 text-center">Por favor, ingresá tu nombre completo.</p>';
+                return;
+            }
+             if (!birthDate) {
+                resultsArea.innerHTML = '<p class="text-red-600 text-center">Por favor, ingresá tu fecha de nacimiento.</p>';
+                return;
+            }
+             // Limitar a aprox 7 palabras (opcional)
+            // const nameWords = name.split(/\s+/).filter(Boolean); // Divide por espacios y quita vacíos
+            // if (nameWords.length > 7) {
+            //     resultsArea.innerHTML = '<p class="text-red-600 text-center">Por favor, ingresá un máximo de 7 nombres/apellidos.</p>';
+            //     return;
+            // }
+
+
+            // Realiza los cálculos
+            const lifePathResult = calculateLifePath(birthDate);
+            const expressionResult = calculateExpression(name);
+            const soulUrgeResult = calculateSoulUrge(name);
+            const personalityResult = calculatePersonality(name);
+
+            // Limpia resultados anteriores
+            resultsArea.innerHTML = '';
+
+            // Muestra los resultados
+            // 1. Desglose del Nombre
+            resultsArea.innerHTML += `
+                <div class="result-section">
+                    <h3 class="result-title">Desglose del Nombre:</h3>
+                    <div class="letter-breakdown text-sm">${expressionResult.breakdown}</div>
+                    <p class="text-xs text-gray-500 mt-2">Suma Total (antes de reducir): ${expressionResult.calculation}</p>
+                </div>
+            `;
+
+            // 2. Números Principales e Interpretaciones
+            const numbers = [
+                { name: "Sendero de Vida", result: lifePathResult, interpKey: 'lifePath' },
+                { name: "Expresión", result: { value: expressionResult.value, calculation: expressionResult.calculation }, interpKey: 'expression' },
+                { name: "Impulso del Alma", result: { value: soulUrgeResult, calculation: 'Suma de vocales' }, interpKey: 'soulUrge' },
+                { name: "Personalidad", result: { value: personalityResult, calculation: 'Suma de consonantes' }, interpKey: 'personality' }
+            ];
+
+            numbers.forEach(num => {
+                // Busca la interpretación (asegurate que el número exista como clave)
+                const interpretationText = interpretations[num.interpKey]?.[num.result.value] || "Interpretación no disponible.";
+
+                resultsArea.innerHTML += `
+                    <div class="result-section">
+                        <h3 class="result-title">${num.name}: <span class="text-calm-primary font-bold text-2xl">${num.result.value}</span></h3>
+                        <p class="text-xs text-gray-500 mb-3">(${num.result.calculation})</p>
+                        <p class="interpretation-text">${interpretationText}</p>
+                    </div>
+                `;
+            });
+        }
+
+        // --- Event Listener ---
+        calculateButton.addEventListener('click', calculateAndDisplay);
+
+    </script>
+
+</body>
+</html>
